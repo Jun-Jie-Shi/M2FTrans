@@ -1,0 +1,16 @@
+## Config file
+lr:              0.0002 # Initial learning rate
+weight_decay:    0.0001
+epochs:          1000 # Number of epochs to train the model
+number_classes:  4 # Number of classes in the target dataset
+batch_size_tr:   2 # Batch size for train
+batch_size_va:   1 # Batch size for validationn
+modalities:      ['flair', 't1ce', 't1', 't2'] # List of modalities needd to be used for training and evaluating the model
+path_to_data:    '/home/sjj/M2FTrans/BraTS/MICCAI_BraTS_2018_Data_Training/' # path to dataset
+path_to_log:     './logs/' # path to save logs
+path_to_ckpts:   './output/brats2018_m2ftrans' # path to save results
+path_to_resume:  '/home/sjj/M2FTrans/M2FTrans_v2/output/brats2018_m2ftrans/model_last.pth'
+# validation_p:    0.1 # validation percentage
+test_p:          0.2 # Test percentage (20%)
+# inputshape:      [160, 192, 128]
+inputshape:      [128, 128, 128]
