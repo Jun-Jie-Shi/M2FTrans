@@ -8,6 +8,14 @@ M2FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain
 
 ### Environment
 
+All our experiments are implemented based on the PyTorch framework with two 24G NVIDIA Geforce RTX 3090 GPUs, and we recommend installing the following package versions:
+
+- python=3.8
+- pytorch=1.12.1
+- torchvision=0.13.1
+
+Dependency packages can be installed using following command:
+
 ```bash
 conda create --name m2ftrans python=3.8
 conda activate m2ftrans
@@ -53,8 +61,9 @@ M2FTrans/
 │   │   ├── ...
 ├── M2FTrans_v1
 │   ├── ...
-└── M2FTrans_v2
-    └── ...
+├── M2FTrans_v2
+│   ├── ...
+└── ...
 ```
 
 ## Training
@@ -100,3 +109,4 @@ python eval.py
 ## Acknowledgement
 
 The implementation is based on the repos: [RFNet](https://github.com/dyh127/RFNet), [mmFormer](https://github.com/YaoZhang93/mmFormer) and [SMU-Net](https://github.com/rezazad68/smunet).
+
