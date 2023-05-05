@@ -36,7 +36,7 @@ We provide two different versions of the implementation, based on previous work 
   tar -xzf BRATS2018_Training_none_npy.tar.gz
   ```
 
-- The preprocessing code ```prepeocess.py``` is also provided, see [RFNet](https://github.com/dyh127/RFNet) for more details.
+- The preprocessing code ```preprocess.py``` is also provided, see [RFNet](https://github.com/dyh127/RFNet) for more details.
 
 **M2FTrans_v2**
 
