@@ -18,9 +18,9 @@ export LD_LIBRARY_PATH=$pypath/lib:$LD_LIBRARY_PATH
 
 export CUDA_VISIBLE_DEVICES=0,1
 #train:
-# with pretrain
-$PYTHON train.py --model $model --batch_size=4 --num_epochs 1000 --iter_per_epoch 150 --lr 2e-4 --region_fusion_start_epoch 0 --dataname $dataname --datapath $datapath --savepath $savepath
 # without pretrain
+$PYTHON train.py --model $model --batch_size=4 --num_epochs 1000 --iter_per_epoch 150 --lr 2e-4 --region_fusion_start_epoch 0 --dataname $dataname --datapath $datapath --savepath $savepath
+# with pretrain
 # $PYTHON train.py --model $model --batch_size=4 --num_epochs 1000 --iter_per_epoch 150 --lr 2e-4 --region_fusion_start_epoch 0 --savepath $savepath --dataname $dataname --datapath $datapath --resume $resume
 
 

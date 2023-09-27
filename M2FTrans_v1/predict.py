@@ -9,6 +9,8 @@ import scipy.misc
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
+from medpy.metric import hd95
+import csv
 from torch.utils.tensorboard import SummaryWriter
 # from utils.visualize import visualize_heads
 # from visualizer import get_local
@@ -21,6 +23,60 @@ path = os.path.dirname(__file__)
 
 patch_size = 80
 
+def compute_BraTS_HD95(ref, pred):
+    """
+    ref and gt are binary integer numpy.ndarray s
+    spacing is assumed to be (1, 1, 1)
+    :param ref:
+    :param pred:
+    :return:
+    """
+    num_ref = np.sum(ref)
+    num_pred = np.sum(pred)
+    if num_ref == 0:
+        if num_pred == 0:
+            return 0
+        else:
+            return 1.0
+            # follow ACN and SMU-Net
+            # return 373.12866
+            # follow nnUNet
+    elif num_pred == 0 and num_ref != 0:
+        return 1.0
+        # follow ACN and SMU-Net
+        # return 373.12866
+        # follow in nnUNet
+    else:
+        return hd95(pred, ref, (1, 1, 1))
+
+def cal_hd95(output, target):
+     # whole tumor
+    mask_gt = (target != 0).astype(int)
+    mask_pred = (output != 0).astype(int)
+    hd95_whole = compute_BraTS_HD95(mask_gt, mask_pred)
+    del mask_gt, mask_pred
+
+    # tumor core
+    mask_gt = ((target == 1) | (target ==3)).astype(int)
+    mask_pred = ((output == 1) | (output ==3)).astype(int)
+    hd95_core = compute_BraTS_HD95(mask_gt, mask_pred)
+    del mask_gt, mask_pred
+
+    # enhancing
+    mask_gt = (target == 3).astype(int)
+    mask_pred = (output == 3).astype(int)
+    hd95_enh = compute_BraTS_HD95(mask_gt, mask_pred)
+    del mask_gt, mask_pred
+
+    mask_gt = (target == 3).astype(int)
+    if np.sum((output == 3).astype(int)) < 500:
+       mask_pred = (output == 3).astype(int) * 0
+    else:
+       mask_pred = (output == 3).astype(int)
+    hd95_enhpro = compute_BraTS_HD95(mask_gt, mask_pred)
+    del mask_gt, mask_pred
+
+    return (hd95_whole, hd95_core, hd95_enh, hd95_enhpro)
 
 def softmax_output_dice_class4(output, target):
     eps = 1e-8
@@ -85,7 +141,7 @@ def test_softmax(
     vals_separate = AverageMeter()
     one_tensor = torch.ones(1, patch_size, patch_size, patch_size).float().cuda()
 
-    if dataname in ['/home/sjj/M2FTrans/BraTS/BRATS2020', '/home/sjj/M2FTrans/BraTS/BRATS2018']:
+    if dataname in ['/home/sjj/MMMSeg/BraTS/BRATS2021','/home/sjj/M2FTrans/BraTS/BRATS2020', '/home/sjj/M2FTrans/BraTS/BRATS2018']:
         num_cls = 4
         class_evaluation= 'whole', 'core', 'enhancing', 'enhancing_postpro'
         class_separate = 'ncr_net', 'edema', 'enhancing'
@@ -141,7 +197,7 @@ def test_softmax(
         pred = pred[:, :, :H, :W, :Z]
         pred = torch.argmax(pred, dim=1)
 
-        if dataname in ['/home/sjj/M2FTrans/BraTS/BRATS2020', '/home/sjj/M2FTrans/BraTS/BRATS2018']:
+        if dataname in ['/home/sjj/MMMSeg/BraTS/BRATS2021','/home/sjj/M2FTrans/BraTS/BRATS2020', '/home/sjj/M2FTrans/BraTS/BRATS2018']:
             scores_separate, scores_evaluation = softmax_output_dice_class4(pred, target)
 
         for k, name in enumerate(names):
@@ -179,6 +235,113 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
+def test_dice_hd95_softmax(
+        test_loader,
+        model,
+        dataname = '/home/sjj/MMMSeg/BraTS/BRATS2021',
+        feature_mask=None,
+        mask_name=None,
+        csv_name=None,
+        ):
+
+    H, W, T = 240, 240, 155
+    model.eval()
+    vals_dice_evaluation = AverageMeter()
+    vals_hd95_evaluation = AverageMeter()
+    vals_separate = AverageMeter()
+    one_tensor = torch.ones(1, patch_size, patch_size, patch_size).float().cuda()
+
+    if dataname in ['/home/sjj/MMMSeg/BraTS/BRATS2021','/home/sjj/MMMSeg/BraTS/BRATS2020', '/home/sjj/MMMSeg/BraTS/BRATS2018']:
+        num_cls = 4
+        class_evaluation= 'whole', 'core', 'enhancing', 'enhancing_postpro'
+        class_separate = 'ncr_net', 'edema', 'enhancing'
+    # elif dataname == '/home/sjj/MMMSeg/BraTS/BRATS2015':
+    #     num_cls = 5
+    #     class_evaluation= 'whole', 'core', 'enhancing', 'enhancing_postpro'
+    #     class_separate = 'necrosis', 'edema', 'non_enhancing', 'enhancing'
+
+
+    for i, data in enumerate(test_loader):
+        target = data[1].cuda()
+        x = data[0].cuda()
+        names = data[-1]
+        if feature_mask is not None:
+            mask = torch.from_numpy(np.array(feature_mask))
+            mask = torch.unsqueeze(mask, dim=0).repeat(len(names), 1)
+        else:
+            mask = data[2]
+        mask = mask.cuda()
+        _, _, H, W, Z = x.size()
+        #########get h_ind, w_ind, z_ind for sliding windows
+        h_cnt = np.int_(np.ceil((H - patch_size) / (patch_size * (1 - 0.5))))
+        h_idx_list = range(0, h_cnt)
+        h_idx_list = [h_idx * np.int_(patch_size * (1 - 0.5)) for h_idx in h_idx_list]
+        h_idx_list.append(H - patch_size)
+
+        w_cnt = np.int_(np.ceil((W - patch_size) / (patch_size * (1 - 0.5))))
+        w_idx_list = range(0, w_cnt)
+        w_idx_list = [w_idx * np.int_(patch_size * (1 - 0.5)) for w_idx in w_idx_list]
+        w_idx_list.append(W - patch_size)
+
+        z_cnt = np.int_(np.ceil((Z - patch_size) / (patch_size * (1 - 0.5))))
+        z_idx_list = range(0, z_cnt)
+        z_idx_list = [z_idx * np.int_(patch_size * (1 - 0.5)) for z_idx in z_idx_list]
+        z_idx_list.append(Z - patch_size)
+
+        #####compute calculation times for each pixel in sliding windows
+        weight1 = torch.zeros(1, 1, H, W, Z).float().cuda()
+        for h in h_idx_list:
+            for w in w_idx_list:
+                for z in z_idx_list:
+                    weight1[:, :, h:h+patch_size, w:w+patch_size, z:z+patch_size] += one_tensor
+        weight = weight1.repeat(len(names), num_cls, 1, 1, 1)
+
+        #####evaluation
+        pred = torch.zeros(len(names), num_cls, H, W, Z).float().cuda()
+        model.module.is_training=False
+        
+        for h in h_idx_list:
+            for w in w_idx_list:
+                for z in z_idx_list:
+                    x_input = x[:, :, h:h+patch_size, w:w+patch_size, z:z+patch_size]
+                    pred_part = model(x_input, mask)
+                    pred[:, :, h:h+patch_size, w:w+patch_size, z:z+patch_size] += pred_part
+        pred = pred / weight
+        b = time.time()
+        pred = pred[:, :, :H, :W, :Z]
+        pred = torch.argmax(pred, dim=1)
+
+        if dataname in ['/home/sjj/MMMSeg/BraTS/BRATS2021','/home/sjj/MMMSeg/BraTS/BRATS2020', '/home/sjj/MMMSeg/BraTS/BRATS2018']:
+            scores_separate, scores_evaluation = softmax_output_dice_class4(pred, target)
+            scores_hd95 = np.array(cal_hd95(pred[0].cpu().numpy(), target[0].cpu().numpy()))
+
+        for k, name in enumerate(names):
+            msg = 'Subject {}/{}, {}/{}'.format((i+1), len(test_loader), (k+1), len(names))
+            msg += '{:>20}, '.format(name)
+
+            vals_separate.update(scores_separate[k])
+            vals_dice_evaluation.update(scores_evaluation[k])
+            vals_hd95_evaluation.update(scores_hd95)
+            msg += 'DSC: '
+            msg += ', '.join(['{}: {:.4f}'.format(k, v) for k, v in zip(class_evaluation, scores_evaluation[k])])
+            msg += ', HD95: '
+            msg += ', '.join(['{}: {:.4f}'.format(k, v) for k, v in zip(class_evaluation, scores_hd95)])
+            file = open(csv_name, "a+")
+            csv_writer = csv.writer(file)
+            csv_writer.writerow([scores_evaluation[k][0], scores_evaluation[k][1], scores_evaluation[k][2],scores_evaluation[k][3],\
+                scores_hd95[0], scores_hd95[1], scores_hd95[2], scores_hd95[3]])
+            file.close()
+            #msg += ',' + ', '.join(['{}: {:.4f}'.format(k, v) for k, v in zip(class_separate, scores_separate[k])])
+
+            logging.info(msg)
+    msg = 'Average scores:'
+    msg += ', '.join(['{}: {:.4f}'.format(k, v) for k, v in zip(class_evaluation, vals_dice_evaluation.avg)])
+    msg += ', '.join(['{}: {:.4f}'.format(k, v) for k, v in zip(class_evaluation, vals_hd95_evaluation.avg)])
+    #msg += ',' + ', '.join(['{}: {:.4f}'.format(k, v) for k, v in zip(class_separate, vals_evaluation.avg)])
+    print (msg)
+    logging.info(msg)
+    model.train()
+    return vals_dice_evaluation.avg, vals_hd95_evaluation.avg
 
 # def test_softmax_visualize(
 #         test_loader,

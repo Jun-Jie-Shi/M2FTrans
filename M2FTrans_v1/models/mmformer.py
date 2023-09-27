@@ -9,12 +9,16 @@ from torch.nn.init import constant_, xavier_uniform_
 # from visualizer import get_local
 
 basic_dims = 8
+### 原论文模型维度
+# basic_dims = 16
+### 相同基线下模型维度
 transformer_basic_dims = 512
 mlp_dim = 4096
 num_heads = 8
 depth = 1
 num_modals = 4
 patch_size = 5
+### 与原论文中模型输入128*128*128输入相比，对比方法采用80*80*80输入
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()

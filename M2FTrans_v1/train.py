@@ -5,6 +5,7 @@ import os
 import random
 import time
 from collections import OrderedDict
+import csv
 
 import numpy as np
 import torch
@@ -18,7 +19,7 @@ from data.transforms import *
 # from visualizer import get_local
 # get_local.activate()
 from models import rfnet, mmformer, fusiontrans
-from predict import AverageMeter, test_softmax
+from predict import AverageMeter, test_softmax, test_dice_hd95_softmax
 # from predict import AverageMeter, test_softmax, test_softmax_visualize
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -43,6 +44,7 @@ parser.add_argument('--pretrain', default=None, type=str)
 parser.add_argument('--region_fusion_start_epoch', default=0, type=int)
 parser.add_argument('--seed', default=1037, type=int)
 parser.add_argument('--needvalid', default=False, type=bool)
+parser.add_argument('--csvpath', default='/home/sjj/M2FTrans/csv/', type=str)
 path = os.path.dirname(__file__)
 
 ## parse arguments
@@ -53,6 +55,9 @@ args.test_transforms = 'Compose([NumpyType((np.float32, np.int64)),])'
 
 ckpts = args.savepath
 os.makedirs(ckpts, exist_ok=True)
+
+csvpath = args.csvpath
+os.makedirs(csvpath, exist_ok=True)
 
 ###tensorboard writer
 writer = SummaryWriter(os.path.join(args.savepath, 'summary'))
@@ -103,7 +108,7 @@ def main():
     cudnn.deterministic = True
 
     ##########setting models
-    if args.dataname in ['/home/sjj/M2FTrans/BraTS/BRATS2020', '/home/sjj/M2FTrans/BraTS/BRATS2018']:
+    if args.dataname in ['/home/sjj/MMMSeg/BraTS/BRATS2021', '/home/sjj/MMMSeg/BraTS/BRATS2020', '/home/sjj/MMMSeg/BraTS/BRATS2018']:
         num_cls = 4
     else:
         print ('dataset is error')
@@ -129,6 +134,11 @@ def main():
         train_file = '/home/sjj/M2FTrans/BraTS/BRATS2020_Training_none_npy/train.txt'
         test_file = '/home/sjj/M2FTrans/BraTS/BRATS2020_Training_none_npy/test.txt'
         # valid_file = '/home/sjj/M2FTrans/BraTS/BRATS2020_Training_none_npy/val.txt'
+    elif args.dataname == '/home/sjj/MMMSeg/BraTS/BRATS2021':
+        ####BRATS2021
+        train_file = '/home/sjj/MMMSeg/BraTS/BRATS2021_Training_none_npy/train.txt'
+        test_file = '/home/sjj/MMMSeg/BraTS/BRATS2021_Training_none_npy/test.txt'
+        # valid_file = '/home/sjj/MMMSeg/BraTS/BRATS2021_Training_none_npy/val.txt'
     elif args.dataname == '/home/sjj/M2FTrans/BraTS/BRATS2018':
         ####BRATS2018 contains three splits (1,2,3)
         train_file = '/home/sjj/M2FTrans/BraTS/BRATS2018_Training_none_npy/train1.txt'
@@ -355,22 +365,34 @@ def main():
     ##########Test the last epoch model
     # writer_visualize = SummaryWriter(log_dir="visualize/result")
     # visualize_step = 0
-    test_score = AverageMeter()
+    test_dice_score = AverageMeter()
+    test_hd95_score = AverageMeter()
+    csv_name = os.path.join(csvpath, '{}.csv'.format(args.model))
     with torch.no_grad():
         logging.info('###########test last epoch model###########')
-
+        file = open(csv_name, "a+")
+        csv_writer = csv.writer(file)
+        csv_writer.writerow(['WT Dice', 'TC Dice', 'ET Dice','ETPro Dice', 'WT HD95', 'TC HD95', 'ET HD95' 'ETPro HD95'])
+        file.close()
         for i, mask in enumerate(masks_test[::-1]):
             logging.info('{}'.format(mask_name[::-1][i]))
-            dice_score = test_softmax(
+            file = open(csv_name, "a+")
+            csv_writer = csv.writer(file)
+            csv_writer.writerow([mask_name[::-1][i]])
+            file.close()
+            dice_score, hd95_score = test_dice_hd95_softmax(
                             test_loader,
                             model,
                             dataname = args.dataname,
                             feature_mask = mask,
-                            mask_name = mask_name[::-1][i]
+                            mask_name = mask_name[::-1][i],
+                            csv_name = csv_name,
                             )
-            test_score.update(dice_score)
-        logging.info('Avg scores: {}'.format(test_score.avg))
+            test_dice_score.update(dice_score)
+            test_hd95_score.update(hd95_score)
 
+        logging.info('Avg Dice scores: {}'.format(test_dice_score.avg))
+        logging.info('Avg HD95 scores: {}'.format(test_hd95_score.avg))
 
 
     # ##########Test the best epoch model
