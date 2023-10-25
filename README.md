@@ -1,8 +1,6 @@
-# M2FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation
+# M$^2$FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation
 
-This repository is the official **PyTorch** implementation of our work:
-
-M2FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation
+This repository is the official **PyTorch** implementation of our work: [M$^2$FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation](https://doi.org/10.1109/JBHI.2023.3326151), presented at IEEE-JBHI 2023.
 
 ## Setup
 
@@ -83,15 +81,12 @@ M2FTrans/
 **M2FTrans_v1**
 
 - Changing the paths and hyperparameters in ``train.sh``, ``train.py`` and ``predict.py``.
-
 - Set different splits for BraTS20xx in ``train.py``.
-
 - Then run:
 
   ```bash
   bash train.sh
   ```
-
 - Noting that you may need more training epochs to get a better performance, you can also choose to load the pretrained model you trained or we [provided](https://drive.google.com/drive/folders/10lBPIO_gjuJvVMHJzQqADdi4WhptwdLI?usp=sharing) by setting the resume path in ``train.sh``.
 
 **M2FTrans_v2**
@@ -124,3 +119,19 @@ python eval.py
 ## Acknowledgement
 
 The implementation is based on the repos: [RFNet](https://github.com/dyh127/RFNet), [mmFormer](https://github.com/YaoZhang93/mmFormer) and [SMU-Net](https://github.com/rezazad68/smunet), we'd like to express our gratitude to these open-source works.
+
+## Citations
+
+Please consider citing this project in your publications if it helps your research. The following is a BibTeX reference. The BibTeX entry requires the `url` LaTeX package:
+
+```
+@ARTICLE{10288381,
+  author={Shi, Junjie and Yu, Li and Cheng, Qimin and Yang, Xin and Cheng, Kwang-Ting and Yan, Zengqiang},
+  journal={IEEE Journal of Biomedical and Health Informatics},
+  title={M $^{2}$ FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation},
+  year={2023},
+  volume={},
+  number={},
+  pages={1-12},
+  doi={10.1109/JBHI.2023.3326151}}
+```
