@@ -127,11 +127,11 @@ Please consider citing this project in your publications if it helps your resear
 ```
 @ARTICLE{10288381,
   author={Shi, Junjie and Yu, Li and Cheng, Qimin and Yang, Xin and Cheng, Kwang-Ting and Yan, Zengqiang},
-  journal={IEEE Journal of Biomedical and Health Informatics},
-  title={M $^{2}$ FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation},
-  year={2023},
-  volume={},
-  number={},
-  pages={1-12},
+  journal={IEEE Journal of Biomedical and Health Informatics}, 
+  title={MFTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation}, 
+  year={2024},
+  volume={28},
+  number={1},
+  pages={379-390},
   doi={10.1109/JBHI.2023.3326151}}
 ```
