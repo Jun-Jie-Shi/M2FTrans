@@ -207,7 +207,7 @@ def main():
             batchsize = mask.size(0)
             # all modalities test
             # mask = masks_all_torch.repeat(batchsize, 1)
-            mask = mask[0].repeat(batchsize, 1)  ## to be test
+            # mask = mask[0].repeat(batchsize, 1)  ## to be test, consider to be deleted
 
             mask = mask.cuda(non_blocking=True)
 
