@@ -51,14 +51,13 @@ def mask_gen_skip(Batchsize, NumHead, patches, NumClass, mask):
     return self_mask == 1
 
 def mask_gen_cross4(Batchsize, K, C, mask):
-    attn_shape = (K, C)
+    attn_shape = (Batchsize, K, C)
     self_mask = np.ones(attn_shape)
-    for i in range(4):
-        if mask[0][i] == 0:
-            self_mask[:,(C//4)*i:(C//4)*(i+1)] = 0
+    for j in range(Batchsize):
+        for i in range(4):
+            if mask[0][i] == 0:
+                self_mask[j:j+1,(C//4)*i:(C//4)*(i+1)] = 0
 
     self_mask = torch.from_numpy(self_mask)
-
-    self_mask = torch.unsqueeze(self_mask, 0).repeat(Batchsize, 1, 1)
 
     return self_mask == 1
