@@ -7,7 +7,7 @@ from models.layers import (general_conv3d, normalization, prm_generator, prm_fus
                     prm_generator_laststage, region_aware_modal_fusion, fusion_postnorm)
 from models.blocks import nchwd2nlc2nchwd, DepthWiseConvBlock, ResBlock, GroupConvBlock, MultiMaskAttentionLayer, MultiMaskCrossBlock
 from torch.nn.init import constant_, xavier_uniform_
-from models.mask import mask_gen_fusion, mask_gen_skip
+from models.mask import mask_gen_fusion
 
 # from visualizer import get_local
 
