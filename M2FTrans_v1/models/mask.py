@@ -55,7 +55,7 @@ def mask_gen_cross4(Batchsize, K, C, mask):
     self_mask = np.ones(attn_shape)
     for j in range(Batchsize):
         for i in range(4):
-            if mask[0][i] == 0:
+            if mask[j][i] == 0:
                 self_mask[j:j+1,(C//4)*i:(C//4)*(i+1)] = 0
 
     self_mask = torch.from_numpy(self_mask)
