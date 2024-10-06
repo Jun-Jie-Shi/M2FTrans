@@ -1,6 +1,6 @@
 # M2FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation
 
-This repository is the official **PyTorch** implementation of our work: [M2FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation](https://doi.org/10.1109/JBHI.2023.3326151), presented at IEEE-JBHI 2023.
+This repository is the official **PyTorch** implementation of our work: [M2FTrans: Modality-Masked Fusion Transformer for Incomplete Multi-Modality Brain Tumor Segmentation](https://doi.org/10.1109/JBHI.2023.3326151), presented at IEEE-JBHI 2024.
 
 ## Setup
 
